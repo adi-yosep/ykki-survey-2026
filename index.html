@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Check-Up YKKI 2026 | Survey</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<style>
+:root{--primary:#1558a8;--pd:#0d3d7a;--accent:#f5a623;--ok:#27ae60;--danger:#e74c3c;--text:#2c3e50;--muted:#7f8c8d;--bg:#f0f4f8;--white:#fff;--border:#dde3ea;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.header{background:linear-gradient(135deg,var(--primary),var(--pd));color:#fff;padding:20px;text-align:center;}
+.header h1{font-size:1.45em;font-weight:700;}
+.header p{opacity:.88;font-size:.88em;margin-top:4px;}
+.hcross{position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:2em;opacity:.2;}
+.header{position:relative;}
+
+#progressBar{background:#fff;padding:13px 20px 10px;box-shadow:0 2px 8px rgba(0,0,0,.08);position:sticky;top:0;z-index:99;display:none;}
+.prog-row{display:flex;justify-content:space-between;font-size:.79em;color:var(--muted);margin-bottom:5px;}
+.prog-track{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:4px;transition:width .4s ease;}
+.dots{display:flex;justify-content:center;gap:6px;margin-top:7px;}
+.dot{width:9px;height:9px;border-radius:50%;background:#e2e8f0;transition:background .3s;}
+.dot.done{background:var(--ok);}.dot.active{background:var(--primary);}
+
+.wrap{max-width:780px;margin:0 auto;padding:22px 14px 50px;}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.07);overflow:hidden;display:none;}
+.card.show{display:block;}
+
+.s-head{padding:20px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);}
+.s-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.65em;flex-shrink:0;}
+.s-title h2{font-size:1.25em;}.s-title p{color:var(--muted);font-size:.86em;margin-top:2px;}
+
+.subgroup{padding:18px 24px;border-bottom:1px solid #f0f3f7;}
+.subgroup:last-of-type{border-bottom:none;}
+.sub-title{font-size:.93em;font-weight:700;color:var(--pd);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.sub-title::before{content:'';width:4px;height:17px;background:var(--accent);border-radius:2px;flex-shrink:0;}
+
+.q-item{margin-bottom:20px;}.q-item:last-child{margin-bottom:4px;}
+.q-text{font-size:.91em;line-height:1.55;margin-bottom:10px;}
+
+.likert{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+.l-opt{display:flex;flex-direction:column;align-items:center;padding:9px 3px 7px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .17s;text-align:center;user-select:none;}
+.l-opt:hover{border-color:var(--primary);background:#eef4ff;}
+.l-num{font-size:1.4em;font-weight:700;line-height:1;}
+.l-lbl{font-size:.63em;margin-top:3px;line-height:1.2;}
+.l-opt.sel-1{background:#fef2f2;border-color:#ef4444;color:#dc2626;}
+.l-opt.sel-2{background:#fff7ed;border-color:#f97316;color:#ea580c;}
+.l-opt.sel-3{background:#fefce8;border-color:#ca8a04;color:#854d0e;}
+.l-opt.sel-4{background:#f0fdf4;border-color:#22c55e;color:#16a34a;}
+.l-opt.sel-5{background:#f0fdf4;border-color:#15803d;color:#14532d;}
+
+.nav{display:flex;justify-content:space-between;gap:10px;padding:16px 24px;background:#f8fafc;border-top:1px solid var(--border);}
+.btn{padding:11px 24px;border-radius:10px;font-size:.95em;font-weight:600;cursor:pointer;border:none;transition:all .17s;display:flex;align-items:center;gap:7px;}
+.btn-primary{background:var(--primary);color:#fff;flex:1;justify-content:center;}
+.btn-primary:hover{background:var(--pd);}
+.btn-secondary{background:#fff;color:var(--text);border:2px solid var(--border);}
+.btn-secondary:hover{background:#f1f5f9;}
+.btn-success{background:var(--ok);color:#fff;flex:1;justify-content:center;}
+.btn-success:hover{background:#219a52;}
+.btn:disabled{opacity:.55;cursor:not-allowed;}
+
+.welcome{padding:28px 24px;}
+.w-hero{text-align:center;margin-bottom:26px;}
+.w-hero .emoji{font-size:3.2em;margin-bottom:8px;}
+.w-hero h2{font-size:1.65em;font-weight:700;color:var(--primary);}
+.w-hero p{color:var(--muted);margin-top:5px;font-size:.93em;}
+
+.info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:13px 15px;font-size:.86em;color:#1d4ed8;margin-bottom:20px;line-height:1.55;}
+.info-box b{display:block;margin-bottom:2px;}
+
+.fgroup{margin-bottom:16px;}
+.fgroup label{display:block;font-weight:600;font-size:.91em;margin-bottom:6px;}
+.fgroup select,.fgroup input{width:100%;padding:10px 13px;border:2px solid var(--border);border-radius:10px;font-size:.95em;background:#fff;transition:border-color .2s;}
+.fgroup select:focus,.fgroup input:focus{outline:none;border-color:var(--primary);}
+.fgroup select:disabled{background:#f1f5f9;color:var(--muted);}
+
+.jabatan-info{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:9px 13px;font-size:.82em;color:#15803d;margin-top:6px;display:none;}
+.quota-badge{display:inline-block;background:#dcfce7;color:#15803d;border-radius:12px;padding:2px 8px;font-weight:700;font-size:.85em;}
+
+.err-inline{color:var(--danger);font-size:.85em;margin-bottom:10px;display:none;}
+.val-err{background:#fef2f2;color:#dc2626;border-radius:8px;padding:10px 15px;margin:0 24px 4px;font-size:.86em;display:none;}
+
+.success{padding:42px 24px;text-align:center;}
+.s-circle{width:76px;height:76px;background:var(--ok);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:2.3em;color:#fff;}
+.s-title{font-size:1.65em;font-weight:700;color:var(--ok);margin-bottom:8px;}
+.s-summary{background:#f8fafc;border-radius:12px;padding:16px;text-align:left;margin:16px 0 20px;font-size:.88em;line-height:1.85;}
+.s-summary p span{font-weight:600;}
+.s-summary p{padding:2px 0;}
+
+/* Respondent tag */
+.resp-tag{display:inline-flex;align-items:center;gap:6px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:5px 12px;font-size:.82em;color:var(--primary);margin-bottom:16px;}
+
+@media(max-width:600px){
+  .l-lbl{display:none;}
+  .s-head,.subgroup,.nav,.welcome{padding-left:14px;padding-right:14px;}
+  .val-err{margin-left:14px;margin-right:14px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="hcross">✝</span>
+  <h1>School Check-Up YKKI 2026</h1>
+  <p>Evaluasi 7 Dimensi Kualitas Sekolah Kristen Kalam Kudus</p>
+</div>
+
+<div id="progressBar">
+  <div class="prog-row"><span id="progLabel">Dimensi 1 dari 7</span><span id="progPct">14%</span></div>
+  <div class="prog-track"><div class="prog-fill" id="progFill" style="width:14%"></div></div>
+  <div class="dots" id="dots"></div>
+</div>
+
+<div class="wrap">
+  <div class="card show" id="step-0">
+    <div class="welcome">
+      <div class="w-hero">
+        <div class="emoji">🏫</div>
+        <h2>School Check-Up YKKI 2026</h2>
+        <p>Evaluasi Kualitas 7 Dimensi Sekolah Kristen</p>
+      </div>
+      <div class="info-box">
+        <b>📋 Panduan Pengisian</b>
+        Survey terdiri dari <b>51 pertanyaan</b> dalam <b>7 dimensi</b>, dinilai dengan skala <b>1–5</b>.
+        Estimasi waktu: <b>15–20 menit</b>. Isi dengan jujur sesuai kondisi nyata sekolah Anda.
+      </div>
+      <div class="fgroup">
+        <label>🏙️ Pilih Cabang SKKK</label>
+        <select id="branchSel" onchange="onBranchChange()"><option value="">-- Pilih Cabang --</option></select>
+      </div>
+      <div class="fgroup">
+        <label>💼 Jabatan Anda</label>
+        <select id="jabatanSel" disabled onchange="onJabatanChange()"><option value="">-- Pilih Cabang dulu --</option></select>
+        <div class="jabatan-info" id="jabatanInfo"></div>
+      </div>
+      <div class="fgroup">
+        <label>👤 Nama Lengkap</label>
+        <input type="text" id="respName" placeholder="Nama lengkap Anda">
+      </div>
+      <div class="err-inline" id="w-err">⚠️ Harap lengkapi semua isian di atas.</div>
+      <button class="btn btn-primary" onclick="startSurvey()" style="width:100%;margin-top:4px;">Mulai Pengisian →</button>
+    </div>
+  </div>
+
+  <!-- Dimension steps injected by JS -->
+
+  <div class="card" id="step-8">
+    <div class="success">
+      <div class="s-circle">✓</div>
+      <div class="s-title">Survey Terkirim!</div>
+      <p style="color:var(--muted)">Terima kasih atas partisipasi Anda dalam<br>School Check-Up YKKI 2026.</p>
+      <div class="s-summary" id="submitSummary"></div>
+      <p style="font-size:.86em;color:var(--muted)">Hasil lengkap dapat dilihat oleh koordinator YKKI<br>melalui halaman <b>Dashboard</b>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+//  FIREBASE CONFIG
+// ================================================================
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyCBQ1WDbJ9HRCieM7KbRAmgs4JWdN-ogSM",
+  authDomain:        "ykki-schoolcheck-2026.firebaseapp.com",
+  databaseURL:       "https://ykki-schoolcheck-2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "ykki-schoolcheck-2026",
+  storageBucket:     "ykki-schoolcheck-2026.firebasestorage.app",
+  messagingSenderId: "718845888037",
+  appId:             "1:718845888037:web:a9fe63b476d325bba561cc"
+};
+
+// ================================================================
+//  JABATAN LIST
+// ================================================================
+const JABATAN_LIST = [
+  { key:"BPC",   label:"Badan Pengurus Cabang" },
+  { key:"DirPel",label:"Direktur Pelaksana (DirPel)" },
+  { key:"KB_TK", label:"Kepala Sekolah KB/TK" },
+  { key:"SD",    label:"Kepala Sekolah SD" },
+  { key:"SMP",   label:"Kepala Sekolah SMP" },
+  { key:"SMA",   label:"Kepala Sekolah SMA" },
+];
+
+// ================================================================
+//  PESERTA PER CABANG (dari Daftar Peserta Survey.xlsx)
+// ================================================================
+const PARTICIPANTS = {
+  "SKKK Cabang Malang":          { BPC:9, DirPel:1, KB_TK:3, SD:3, SMP:2, SMA:2 },
+  "SKKK Cabang Ambon":           { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Solo":            { BPC:9, DirPel:1, KB_TK:1, SD:2, SMP:1, SMA:1 },
+  "SKKK Cabang Surabaya":        { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Pematangsiantar": { BPC:9, DirPel:1, KB_TK:2, SD:2, SMP:1, SMA:1 },
+  "SKKK Cabang Palopo":          { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:0, SMA:0 },
+  "SKKK Cabang Timika":          { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Sentani":         { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:0 },
+  "SKKK Cabang Jakarta":         { BPC:9, DirPel:1, KB_TK:5, SD:5, SMP:3, SMA:2 },
+  "SKKK Cabang Sorong":          { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Makassar":        { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:0 },
+  "SKKK Cabang Medan":           { BPC:9, DirPel:1, KB_TK:2, SD:2, SMP:2, SMA:1 },
+  "SKKK Cabang Jayapura":        { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Bandung":         { BPC:9, DirPel:1, KB_TK:3, SD:3, SMP:2, SMA:1 },
+  "SKKK Cabang Kotaraja":        { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:0 },
+  "SKKK Cabang Blitar":          { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:0, SMA:0 },
+  "SKKK Cabang Pontianak":       { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Bali":            { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Pekanbaru":       { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Batam":           { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:0 },
+  "SKKK Cabang Keerom":          { BPC:9, DirPel:1, KB_TK:3, SD:0, SMP:0, SMA:0 },
+  "SKKK Cabang Selatpanjang":    { BPC:9, DirPel:1, KB_TK:2, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Yogyakarta":      { BPC:9, DirPel:1, KB_TK:2, SD:1, SMP:1, SMA:0 },
+  "SKKK Cabang Dumai":           { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:0 },
+  "SKKK Cabang Padang":          { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Merauke":         { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:1 },
+  "SKKK Cabang Sibolga":         { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:0, SMA:0 },
+  "SKKK Cabang Bone":            { BPC:9, DirPel:1, KB_TK:1, SD:1, SMP:1, SMA:0 },
+  "SKKK Cabang Bengkalis":       { BPC:0, DirPel:0, KB_TK:1, SD:0, SMP:0, SMA:0 },
+};
+
+// ================================================================
+//  7 DIMENSI & 51 PERTANYAAN
+// ================================================================
+const DIMS = [
+  { id:"d1", name:"Leadership", icon:"👑", color:"#1558a8", bg:"#ebf4ff",
+    desc:"Kepemimpinan, tata kelola yayasan, dan kaderisasi",
+    subs:[
+      { name:"Visioning", qs:[
+        "Apakah sekolah memiliki visi dan misi yang beraspirasi kualitas dan Christian worldview?",
+        "Apakah visi dan misi tersebut secara konsisten dikomunikasikan kepada semua stakeholder?",
+        "Apakah visi dan misi tersebut selalu dijadikan pedoman dalam penyusunan strategi dan program?"
+      ]},
+      { name:"Board Governance", qs:[
+        "Apakah di antara pengurus yayasan sudah terjadi pembagian peran yang jelas?",
+        "Apakah di antara pengurus yayasan terjadi kerjasama / teamwork yang efektif?",
+        "Apakah sudah ada tata kelola yang transparan dan akuntabel antara yayasan, pimpinan, dan seluruh stakeholder?"
+      ]},
+      { name:"Nurturing", qs:[
+        "Apakah pengurus yayasan menunjukkan keteladanan dan komitmen melalui kehadiran rutin dalam meeting serta kontribusi aktif?",
+        "Apakah terdapat proses mentoring atau coaching bagi tenaga pendidik dan staf di lingkungan sekolah?",
+        "Apakah yayasan menjalankan kaderisasi kepemimpinan melalui proses pembinaan dan mentoring yang terencana dan berkelanjutan?"
+      ]}
+    ]
+  },
+  { id:"d2", name:"Strategy", icon:"🎯", color:"#7c3aed", bg:"#f5f3ff",
+    desc:"Strategi pertumbuhan, targeting murid, dan positioning sekolah",
+    subs:[
+      { name:"School Growth", qs:[
+        "Apakah pengurus yayasan memiliki strategi jangka pendek, menengah, dan panjang untuk meningkatkan pertumbuhan dan kualitas pendidikan?",
+        "Apakah pengurus yayasan memiliki strategi pembinaan spiritualitas murid?",
+        "Apakah pengurus yayasan memiliki KPI dan sistem pengukurannya?"
+      ]},
+      { name:"Parent / Student Targeting", qs:[
+        "Apakah pengurus yayasan memahami kondisi demografi dan dinamika dunia pendidikan?",
+        "Apakah pengurus yayasan sudah memahami segmentasi murid berdasarkan demografi lokal?",
+        "Apakah pengurus yayasan sudah memilih target segmen murid sekolah dengan tepat?"
+      ]},
+      { name:"School Positioning", qs:[
+        "Apakah pengurus yayasan memahami kemampuan, tantangan, serta keunikan sekolah (analisis SWOT)?",
+        "Apakah pengurus yayasan memiliki strategi yang sistematis untuk membangun dan memperkuat keunikan serta keunggulan sekolah?",
+        "Apakah positioning sekolah telah dikomunikasikan secara konsisten kepada tenaga pendidik, staf, murid, dan orang tua?"
+      ]}
+    ]
+  },
+  { id:"d3", name:"Operational Process", icon:"⚙️", color:"#c2410c", bg:"#fff7ed",
+    desc:"Prosedur operasional, budgeting, dan manajemen aset",
+    subs:[
+      { name:"Standard Operation Procedure (SOP)", qs:[
+        "Apakah sekolah memiliki tata cara atau prosedur tertulis terkait proses pembelajaran?",
+        "Apakah SOP pembelajaran dijalankan secara konsisten dan sesuai ketentuan?",
+        "Apakah sekolah secara berkala melakukan review dan memperbarui SOP?"
+      ]},
+      { name:"Budgeting", qs:[
+        "Apakah sekolah memiliki proses penyusunan budgeting yang akuntabel dan transparan?",
+        "Apakah sekolah menggunakan budgeting dengan efektif?",
+        "Apakah sekolah telah melakukan audit berkala?"
+      ]},
+      { name:"Asset Management", qs:[
+        "Apakah sekolah memiliki laporan keseluruhan data aset yang rapi?",
+        "Apakah sekolah telah menggunakan aset secara efektif dan optimal?",
+        "Apakah sekolah membuat perencanaan penambahan aset untuk pembangunan sarana dan prasarana 3 tahun mendatang?"
+      ]}
+    ]
+  },
+  { id:"d4", name:"Human Resource", icon:"👥", color:"#0f766e", bg:"#f0fdfa",
+    desc:"Struktur staf, pelatihan & mentoring, dan sistem remunerasi",
+    subs:[
+      { name:"Structure of Staff", qs:[
+        "Apakah sekolah membangun spirit kebersamaan bagi setiap tenaga pendidik dan jajaran staf?",
+        "Apakah sekolah memiliki struktur organisasi yang efektif, pembagian jobdesc dan tanggung jawab yang jelas?",
+        "Apakah struktur tenaga pendidik mendukung pelaksanaan visi dan strategi?"
+      ]},
+      { name:"Training & Mentoring", qs:[
+        "Apakah sekolah memiliki perencanaan pembinaan guru dan staf melalui proses pelatihan dan mentoring?",
+        "Apakah sekolah mendorong dan memfasilitasi guru untuk mengikuti sertifikasi dari pemerintah dan lembaga lainnya?",
+        "Apakah sekolah secara berkala mengevaluasi hasil atau dampak dari program pelatihan dan pengembangan guru?"
+      ]},
+      { name:"Remuneration", qs:[
+        "Apakah sekolah telah menetapkan standar remunerasi yang sesuai dengan visi menjadi sekolah yang berkualitas?",
+        "Apakah sistem remunerasi sekolah dirancang untuk meningkatkan loyalitas, motivasi, dan kinerja guru secara berkelanjutan?",
+        "Apakah sekolah memiliki perencanaan untuk meningkatkan remunerasi guru melalui program pemerintah atau lembaga lainnya?"
+      ]}
+    ]
+  },
+  { id:"d5", name:"Learning", icon:"📚", color:"#4338ca", bg:"#eef2ff",
+    desc:"Kurikulum berbasis Christian worldview, kualitas guru, dan teknologi",
+    subs:[
+      { name:"Curriculum", qs:[
+        "Apakah sekolah menerapkan kurikulum berbasis Christian worldview?",
+        "Apakah kurikulum sekolah dirancang secara holistik untuk menghasilkan proses pembelajaran yang menyenangkan dan berkualitas?",
+        "Apakah sekolah memiliki program ekstrakurikuler yang konsisten dengan strategi positioningnya?"
+      ]},
+      { name:"Teacher", qs:[
+        "Apakah guru di sekolah memiliki panggilan yang kuat untuk mengajar dan mendidik murid?",
+        "Apakah guru di sekolah memiliki kemampuan mengajar yang kreatif dan efektif?",
+        "Apakah guru terlibat secara aktif dalam proses pemuridan melalui pendampingan rohani yang rutin?"
+      ]},
+      { name:"Technology", qs:[
+        "Apakah sekolah memanfaatkan perkembangan teknologi dalam proses pembelajaran?",
+        "Apakah sekolah menyediakan pelatihan berkala bagi guru dan staf agar mampu menggunakan teknologi secara efektif dalam pembelajaran?",
+        "Apakah teknologi pembelajaran telah menghasilkan proses pembelajaran yang optimal?"
+      ]}
+    ]
+  },
+  { id:"d6", name:"Loyalty", icon:"❤️", color:"#be185d", bg:"#fdf2f8",
+    desc:"Keterlibatan, kekuatan komunitas, dan rekomendasi",
+    subs:[
+      { name:"Engagement",     qs:["Apakah sekolah memiliki relasi yang kuat antara guru dengan murid, dan guru dengan orang tua murid?"] },
+      { name:"Community",      qs:["Apakah sekolah memiliki komunitas yang kuat sesama guru, sesama murid, sesama orang tua?"] },
+      { name:"Recommendation", qs:["Apakah murid, orang tua murid, dan alumni memberikan rekomendasi kepada orang lain untuk bersekolah di tempat tersebut?"] }
+    ]
+  },
+  { id:"d7", name:"Performance", icon:"📊", color:"#b45309", bg:"#fffbeb",
+    desc:"Pertumbuhan jumlah siswa, kesehatan keuangan, dan reputasi sekolah",
+    subs:[
+      { name:"Student Number Growth",
+        customScale:[{v:1,l:"Turun<br/>>10%"},{v:2,l:"Turun<br/>1–10%"},{v:3,l:"Stagnan<br/>(0%)"},{v:4,l:"Naik<br/>1–10%"},{v:5,l:"Naik<br/>>10%"}],
+        qs:["Berapakah rata-rata pertumbuhan jumlah siswa per tahun selama 3 tahun terakhir?"]
+      },
+      { name:"Financial Health",
+        customScale:[{v:1,l:"Defisit<br/>>10%"},{v:2,l:"Defisit<br/>1–10%"},{v:3,l:"Break<br/>Even"},{v:4,l:"Surplus<br/>1–10%"},{v:5,l:"Surplus<br/>>10%"}],
+        qs:["Berapa rata-rata persentase surplus atau defisit per tahun dari kinerja keuangan selama 3 tahun terakhir?"]
+      },
+      { name:"Reputation / Branding",
+        qs:["Apakah sekolah memiliki brand awareness yang tinggi dan brand image yang kuat di komunitas lokal?"]
+      }
+    ]
+  }
+];
+
+const DEFAULT_SCALE = [
+  {v:1,l:"Tidak<br/>Sama Sekali"},{v:2,l:"Kurang"},{v:3,l:"Cukup"},{v:4,l:"Baik"},{v:5,l:"Sangat<br/>Baik"}
+];
+
+// ================================================================
+//  STATE
+// ================================================================
+let step = 0, answers = {};
+let db;
+
+// ================================================================
+//  INIT
+// ================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+  } catch(e) { console.warn("Firebase:", e.message); }
+
+  // Populate branch dropdown
+  const sel = document.getElementById('branchSel');
+  Object.keys(PARTICIPANTS).sort().forEach(b => {
+    const o = document.createElement('option');
+    o.value = b; o.textContent = b;
+    sel.appendChild(o);
+  });
+
+  buildSteps();
+
+  const dotsEl = document.getElementById('dots');
+  DIMS.forEach((_,i) => {
+    const d = document.createElement('div');
+    d.className='dot'; d.id=`dot${i}`; d.title=DIMS[i].name;
+    dotsEl.appendChild(d);
+  });
+});
+
+function onBranchChange() {
+  const branch = document.getElementById('branchSel').value;
+  const jabSel = document.getElementById('jabatanSel');
+  jabSel.innerHTML = '<option value="">-- Pilih Jabatan --</option>';
+  jabSel.disabled = !branch;
+  document.getElementById('jabatanInfo').style.display = 'none';
+
+  if (!branch) return;
+
+  const quotas = PARTICIPANTS[branch];
+  JABATAN_LIST.forEach(j => {
+    if ((quotas[j.key] || 0) > 0) {
+      const o = document.createElement('option');
+      o.value = j.key;
+      o.dataset.label = j.label;
+      o.dataset.quota = quotas[j.key];
+      o.textContent = j.label;
+      jabSel.appendChild(o);
+    }
+  });
+}
+
+function onJabatanChange() {
+  const jabSel = document.getElementById('jabatanSel');
+  const opt = jabSel.options[jabSel.selectedIndex];
+  const info = document.getElementById('jabatanInfo');
+  if (!opt || !opt.dataset.quota) { info.style.display='none'; return; }
+  const quota = opt.dataset.quota;
+  info.innerHTML = `Jumlah peserta untuk jabatan ini: <span class="quota-badge">${quota} orang</span>`;
+  info.style.display = 'block';
+}
+
+function buildSteps() {
+  const wrap = document.querySelector('.wrap');
+  const successEl = document.getElementById('step-8');
+
+  DIMS.forEach((dim, di) => {
+    const card = document.createElement('div');
+    card.className = 'card'; card.id = `step-${di+1}`;
+
+    let html = `<div class="s-head" style="background:${dim.bg}">
+      <div class="s-icon" style="background:${dim.color}22;color:${dim.color}">${dim.icon}</div>
+      <div class="s-title">
+        <h2 style="color:${dim.color}">Dimensi ${di+1}: ${dim.name}</h2>
+        <p>${dim.desc}</p>
+      </div>
+    </div>
+    <div style="padding:10px 24px 0" id="respTag${di+1}"></div>`;
+
+    dim.subs.forEach((sub, si) => {
+      const scale = sub.customScale || DEFAULT_SCALE;
+      html += `<div class="subgroup"><div class="sub-title">${sub.name}</div>`;
+      sub.qs.forEach((q, qi) => {
+        const id = `${dim.id}_${si}_${qi}`;
+        html += `<div class="q-item">
+          <div class="q-text">${q}</div>
+          <div class="likert" id="lk_${id}">
+            ${scale.map(s=>`<div class="l-opt" onclick="pick('${id}',${s.v},this)" data-v="${s.v}">
+              <div class="l-num">${s.v}</div><div class="l-lbl">${s.l}</div>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+
+    html += `<div class="val-err" id="err${di+1}">⚠️ Mohon jawab semua pertanyaan di dimensi ini sebelum melanjutkan.</div>
+    <div class="nav">
+      <button class="btn btn-secondary" onclick="back()">← Kembali</button>
+      ${di < DIMS.length-1
+        ? `<button class="btn btn-primary" onclick="next(${di})">Lanjut →</button>`
+        : `<button class="btn btn-success" id="submitBtn" onclick="doSubmit()">✓ Kirim Survey</button>`
+      }
+    </div>`;
+
+    card.innerHTML = html;
+    wrap.insertBefore(card, successEl);
+  });
+}
+
+function showRespTag(di) {
+  const branch = document.getElementById('branchSel').value;
+  const jabSel = document.getElementById('jabatanSel');
+  const jabLabel = jabSel.options[jabSel.selectedIndex]?.text || '';
+  const el = document.getElementById(`respTag${di}`);
+  if (el) el.innerHTML = `<div class="resp-tag">🏫 ${branch.replace('SKKK Cabang ','')} &nbsp;|&nbsp; ${jabLabel}</div>`;
+}
+
+function showStep(n) {
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('show'));
+  document.getElementById(`step-${n}`).classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+
+  const pb = document.getElementById('progressBar');
+  if (n===0||n===8){pb.style.display='none';return;}
+  pb.style.display='block';
+  const pct = Math.round((n/DIMS.length)*100);
+  document.getElementById('progLabel').textContent=`Dimensi ${n} dari ${DIMS.length}`;
+  document.getElementById('progPct').textContent=pct+'%';
+  document.getElementById('progFill').style.width=pct+'%';
+  DIMS.forEach((_,i)=>{
+    const dot=document.getElementById(`dot${i}`);
+    dot.className='dot'+(i<n-1?' done':i===n-1?' active':'');
+  });
+  showRespTag(n);
+}
+
+function startSurvey() {
+  const branch  = document.getElementById('branchSel').value;
+  const jabKey  = document.getElementById('jabatanSel').value;
+  const name    = document.getElementById('respName').value.trim();
+  const errEl   = document.getElementById('w-err');
+  if (!branch||!jabKey||!name){errEl.style.display='block';return;}
+  errEl.style.display='none';
+  step=1; showStep(1);
+}
+
+function pick(id, val, el) {
+  answers[id]=val;
+  document.getElementById(`lk_${id}`).querySelectorAll('.l-opt').forEach(o=>o.className='l-opt');
+  el.className=`l-opt sel-${val}`;
+}
+
+function getQIds(di) {
+  const dim=DIMS[di], ids=[];
+  dim.subs.forEach((sub,si)=>sub.qs.forEach((_,qi)=>ids.push(`${dim.id}_${si}_${qi}`)));
+  return ids;
+}
+
+function next(di) {
+  const missing=getQIds(di).filter(id=>answers[id]===undefined);
+  if (missing.length){
+    document.getElementById(`err${di+1}`).style.display='block';
+    document.getElementById(`lk_${missing[0]}`).scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  document.getElementById(`err${di+1}`).style.display='none';
+  step++; showStep(step);
+}
+
+function back(){
+  if(step>1){step--;showStep(step);}
+  else{step=0;showStep(0);}
+}
+
+async function doSubmit(){
+  const lastDi=DIMS.length-1;
+  const missing=getQIds(lastDi).filter(id=>answers[id]===undefined);
+  if(missing.length){
+    document.getElementById(`err${lastDi+1}`).style.display='block';
+    document.getElementById(`lk_${missing[0]}`).scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+
+  const branch   = document.getElementById('branchSel').value;
+  const jabSel   = document.getElementById('jabatanSel');
+  const jabKey   = jabSel.value;
+  const jabLabel = jabSel.options[jabSel.selectedIndex]?.text||'';
+  const name     = document.getElementById('respName').value.trim();
+  const btn      = document.getElementById('submitBtn');
+  btn.disabled=true; btn.textContent='⏳ Mengirim...';
+
+  const payload = {
+    branch, jabatan_key:jabKey, jabatan_label:jabLabel,
+    respondent:name, timestamp:Date.now(), ...answers
+  };
+
+  try {
+    if(db){ await db.ref('responses').push(payload); }
+    else { localStorage.setItem(`ykki_${Date.now()}`, JSON.stringify(payload)); }
+
+    document.getElementById('submitSummary').innerHTML=
+      `<p>🏫 <span>Cabang:</span> ${branch}</p>
+       <p>💼 <span>Jabatan:</span> ${jabLabel}</p>
+       <p>👤 <span>Nama:</span> ${name}</p>
+       <p>⏰ <span>Waktu:</span> ${new Date().toLocaleString('id-ID')}</p>
+       <p>✅ <span>Dijawab:</span> ${Object.keys(answers).length} / 51 pertanyaan</p>`;
+    step=8; showStep(8);
+  } catch(err){
+    btn.disabled=false; btn.textContent='✓ Kirim Survey';
+    alert('❌ Gagal mengirim.\n\nPastikan koneksi internet aktif.\n\nError: '+err.message);
+  }
+}
+</script>
+</body>
+</html>
